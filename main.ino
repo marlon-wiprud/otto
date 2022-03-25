@@ -177,6 +177,13 @@ class Action {
     int leftFootPos;
     int rightLegPos;
     int rightFootPos;
+
+    Action() {
+        leftFootPos = 90;
+        leftLegPos = 90;
+        rightLegPos = 90;
+        rightFootPos = 90;
+    }
 };
 
 class ActionLink {
@@ -203,7 +210,9 @@ class ActionManager {
 
     ActionManager()
     {
-
+        head = nullptr;
+        tail = nullptr;
+        bodyCtrl = nullptr;
     }
     
     void next()
@@ -215,7 +224,6 @@ class ActionManager {
             if(a != nullptr)
             {
                Serial.println("setting targets...");
-            //    Serial.println(a->actionName);
                Serial.println(a->leftLegPos);
                Serial.println(a->leftFootPos);
                Serial.println(a->rightLegPos);
@@ -234,6 +242,7 @@ class ActionManager {
 
         if(head == nullptr)
         {
+            Serial.println("setting first link...");
             head = link;
             tail = link;
         } else {
@@ -268,10 +277,52 @@ class ActionManager {
 
 ActionManager* actionManager = new ActionManager();
 
-int servoPinLegLeft = 2;
-int servoPinLegRight = 3;
-int servoPinFootLeft = 4;
-int servoPinFootRight = 5;
+int servoPinLegRight = 2;
+int servoPinLegLeft = 3;
+int servoPinFootRight = 4;
+int servoPinFootLeft = 5;
+
+Action actionBallerina()
+{
+    Action a = Action();
+    a.leftFootPos = 60;
+    a.leftLegPos = 120;
+    a.rightFootPos = 120;
+    a.rightLegPos = 60;
+    return a;
+}  
+
+Action actionReverseBallerina()
+{
+    Action a = Action();
+    a.leftFootPos = 120;
+    a.leftLegPos = 60;
+    a.rightFootPos = 60;
+    a.rightLegPos = 120;
+    return a;
+}  
+
+
+Action actionHipFlexionOut()
+{
+    Action a = Action();
+    a.leftFootPos = 90;
+    a.leftLegPos = 120;
+    a.rightFootPos = 90;
+    a.rightLegPos = 60;
+    return a;
+}
+
+
+Action actionHipFlexionIn()
+{
+    Action a = Action();
+    a.leftFootPos = 90;
+    a.leftLegPos = 60;
+    a.rightFootPos = 90;
+    a.rightLegPos = 120;
+    return a;
+}
 
 Action actionTipToe()
 {
@@ -280,8 +331,20 @@ Action actionTipToe()
     a.leftLegPos = 90;
     a.rightFootPos = 120;
     a.rightLegPos = 90;
+    Serial.println("building tip toe..");
     return a;
 }
+
+Action actionReverseTipToe()
+{
+    Action a = Action();
+    a.leftFootPos = 120;
+    a.leftLegPos = 90;
+    a.rightFootPos = 60;
+    a.rightLegPos = 90;
+    return a;
+}
+
 
 Action actionReset()
 {
@@ -293,6 +356,109 @@ Action actionReset()
     return a;
 }
 
+Action actionRightLeg(int hip, int foot) 
+{
+    Action a = actionReset();
+    a.rightLegPos = hip;
+    a.rightFootPos = foot;
+    return a;
+}
+
+Action actionLeftLeg(int hip, int foot) 
+{
+    Action a = actionReset();
+    a.leftLegPos = hip;
+    a.leftFootPos = foot;
+    return a;
+}
+
+// Action actionRightFoot(int pos) {
+//     Action a = actionReset();
+//     a.rightFootPos = pos;
+//     return a;
+// }
+
+Action actionLeftFoot(int pos) {
+    Action a = actionReset();
+    a.leftFootPos = pos;
+    return a;
+}
+
+void movementStepRight()
+{
+
+    actionManager->add(actionRightLeg(120, 70));
+    actionManager->add(actionRightLeg(120, 90));
+    actionManager->add(actionRightLeg(40, 110));
+    actionManager->add(actionRightLeg(40, 70));
+    actionManager->add(actionRightLeg(120, 70));
+
+    // actionManager->add(actionRightLeg(40, 70));
+    // actionManager->add(actionRightLeg(90, 120));
+    
+    // actionManager->add(actionRightLeg(120));
+    // actionManager->add(actionRightFoot(120));
+    // actionManager->add(actionRightLeg(60));
+    // actionManager->add(actionReset());
+    // actionManager->add(actionRightFoot(120));
+}
+
+void movementStepLeft()
+{
+    actionManager->add(actionLeftLeg(60, 110));
+    actionManager->add(actionLeftLeg(60, 90));
+    actionManager->add(actionLeftLeg(140, 70));
+    actionManager->add(actionLeftLeg(140, 110));
+    actionManager->add(actionLeftLeg(60, 110));
+
+
+    // actionManager->add(actionLeftLeg(60));
+    // actionManager->add(actionLeftFoot(60));
+    // actionManager->add(actionLeftLeg(120));
+    // actionManager->add(actionLeftFoot(120));
+    // actionManager->add(actionReset());
+}
+
+void movementTestFeet()
+{
+    actionManager->add(actionTipToe()); 
+    actionManager->add(actionReverseTipToe());
+    actionManager->add(actionReset()); 
+}
+
+void movementTestHips()
+{
+    actionManager->add(actionHipFlexionIn());
+    actionManager->add(actionHipFlexionOut());
+    actionManager->add(actionReset());
+}
+
+void movementTestAllJoints()
+{
+    actionManager->add(actionBallerina());
+    actionManager->add(actionReset());
+    actionManager->add(actionReverseBallerina());
+    actionManager->add(actionReset());
+}
+
+void movementWalk(int steps) 
+{
+    for(int i = 0; i < steps; i++)
+    {
+        movementStepLeft();
+        movementStepRight();
+    }
+}
+
+void routineTestJoints() {
+    movementTestFeet();
+    movementTestHips();
+    movementTestAllJoints();
+    movementTestFeet();
+    movementTestHips();
+    movementTestAllJoints();
+}
+
 void setup() {
     Serial.begin(9600);
     
@@ -301,7 +467,6 @@ void setup() {
     Servo servoRightLeg;
     Servo servoRightFoot;
 
-  // put your setup code here, to run once:
     servoLeftLeg.attach(servoPinLegLeft);
     servoLeftFoot.attach(servoPinFootLeft);
     servoRightLeg.attach(servoPinLegRight);
@@ -324,13 +489,11 @@ void setup() {
 
     actionManager->bodyCtrl = bodyCtrl;
 
-    actionManager->add(actionTipToe()); 
-    actionManager->add(actionReset());
-    actionManager->add(actionTipToe()); 
-    actionManager->add(actionReset());
-    actionManager->add(actionTipToe());
-    actionManager->add(actionReset());
- 
+    movementWalk(3); 
+    // movementStepRight();
+    // movementStepLeft();
+    // movementStepRight();
+    // movementStepLeft();
 }
 
 
