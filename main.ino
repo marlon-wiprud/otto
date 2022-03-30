@@ -11,7 +11,7 @@ class JointCtrl {
     int start = 90;
     int current = 90;
     int target = 90;
-    float rate = 1;
+    int rate = 1;
     Servo joint;
 
     void attach(Servo _joint)
@@ -24,6 +24,24 @@ class JointCtrl {
         joint.write(start);
     }
 
+    int increment()
+    {
+        if(current + rate > target)
+        {
+            return target - current;
+        }
+
+        return rate;
+    }
+
+    int decrement() 
+    {
+       if(current - rate < target)
+        {
+            return current - target; 
+        }
+    }
+
     void step()
     {
         if(current != target && target >= MIN_POS && target <= MAX_POS)
@@ -31,11 +49,13 @@ class JointCtrl {
             if(current < target)
             {
                 current = current + 1;
+                // current = current + increment();
             }
 
             if(current > target)
             {
                 current = current - 1;
+                // current = current - decrement();
             }
             joint.write(current); 
         }
@@ -43,10 +63,7 @@ class JointCtrl {
 
     boolean hasReachedTarget()
     {   
-        // Serial.println("has reached: ");
-        // Serial.println(current);
-        // Serial.println(target);
-        return current == target;
+       return current == target;
     }
 };
 
@@ -177,12 +194,14 @@ class Action {
     int leftFootPos;
     int rightLegPos;
     int rightFootPos;
+    int rate;
 
     Action() {
         leftFootPos = 90;
         leftLegPos = 90;
         rightLegPos = 90;
         rightFootPos = 90;
+        rate = 1;
     }
 };
 
@@ -372,51 +391,10 @@ Action actionLeftLeg(int hip, int foot)
     return a;
 }
 
-// Action actionRightFoot(int pos) {
-//     Action a = actionReset();
-//     a.rightFootPos = pos;
-//     return a;
-// }
-
 Action actionLeftFoot(int pos) {
     Action a = actionReset();
     a.leftFootPos = pos;
     return a;
-}
-
-void movementStepRight()
-{
-
-    actionManager->add(actionRightLeg(120, 70));
-    actionManager->add(actionRightLeg(120, 90));
-    actionManager->add(actionRightLeg(40, 110));
-    actionManager->add(actionRightLeg(40, 70));
-    actionManager->add(actionRightLeg(120, 70));
-
-    // actionManager->add(actionRightLeg(40, 70));
-    // actionManager->add(actionRightLeg(90, 120));
-    
-    // actionManager->add(actionRightLeg(120));
-    // actionManager->add(actionRightFoot(120));
-    // actionManager->add(actionRightLeg(60));
-    // actionManager->add(actionReset());
-    // actionManager->add(actionRightFoot(120));
-}
-
-void movementStepLeft()
-{
-    actionManager->add(actionLeftLeg(60, 110));
-    actionManager->add(actionLeftLeg(60, 90));
-    actionManager->add(actionLeftLeg(140, 70));
-    actionManager->add(actionLeftLeg(140, 110));
-    actionManager->add(actionLeftLeg(60, 110));
-
-
-    // actionManager->add(actionLeftLeg(60));
-    // actionManager->add(actionLeftFoot(60));
-    // actionManager->add(actionLeftLeg(120));
-    // actionManager->add(actionLeftFoot(120));
-    // actionManager->add(actionReset());
 }
 
 void movementTestFeet()
@@ -445,9 +423,18 @@ void movementWalk(int steps)
 {
     for(int i = 0; i < steps; i++)
     {
-        movementStepLeft();
-        movementStepRight();
-    }
+
+        Action r = actionRightLeg(120, 70);
+        r.leftLegPos = 120;
+        r.leftFootPos = 70;
+
+        Action l = actionLeftLeg(60, 110);
+        l.rightLegPos = 60;
+        l.rightFootPos = 110;
+
+        actionManager->add(r);
+        actionManager->add(l);
+   }
 }
 
 void routineTestJoints() {
@@ -489,7 +476,7 @@ void setup() {
 
     actionManager->bodyCtrl = bodyCtrl;
 
-    movementWalk(3); 
+    movementWalk(8); 
     // movementStepRight();
     // movementStepLeft();
     // movementStepRight();
