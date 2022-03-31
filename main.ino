@@ -48,14 +48,18 @@ class JointCtrl {
         {
             if(current < target)
             {
-                current = current + 1;
-                // current = current + increment();
+                // current = current + 1;
+                Serial.println("stepping increment: ");
+                Serial.println(increment());
+                current = current + increment();
             }
 
             if(current > target)
             {
-                current = current - 1;
-                // current = current - decrement();
+                 Serial.println("stepping decrement: ");
+                Serial.println(decrement());
+                // current = current - 1;
+                current = current - decrement();
             }
             joint.write(current); 
         }
