@@ -40,6 +40,7 @@ class JointCtrl {
         {
             return current - target; 
         }
+        return rate;
     }
 
     void step()
@@ -48,16 +49,16 @@ class JointCtrl {
         {
             if(current < target)
             {
+                // Serial.println("stepping increment: ");
+                // Serial.println(increment());
                 // current = current + 1;
-                Serial.println("stepping increment: ");
-                Serial.println(increment());
                 current = current + increment();
             }
 
             if(current > target)
             {
-                 Serial.println("stepping decrement: ");
-                Serial.println(decrement());
+                // Serial.println("stepping decrement: ");
+                // Serial.println(decrement());
                 // current = current - 1;
                 current = current - decrement();
             }
@@ -126,12 +127,21 @@ class BodyCtrl {
         } 
     }
 
-    void setTargets(int LL, int LF, int RL, int RF)
+    void setTargets(int LL, int LF, int RL, int RF, int rate)
     {
         joints[idxLeftLeg]->target = LL;
+        joints[idxLeftLeg]->rate = rate;
+        
+        
         joints[idxLeftFoot]->target = LF;
+        joints[idxLeftFoot]->rate = rate;
+        
         joints[idxRightLeg]->target = RL;
+        joints[idxRightLeg]->rate = rate;
+        
         joints[idxRightFoot]->target = RF;
+        joints[idxRightLeg]->rate = rate;
+        
     }
 
     boolean hasReachedTarget()
@@ -251,7 +261,8 @@ class ActionManager {
                Serial.println(a->leftFootPos);
                Serial.println(a->rightLegPos);
                Serial.println(a->rightFootPos);
-               bodyCtrl->setTargets(a->leftLegPos, a->leftFootPos, a->rightLegPos, a->rightFootPos);
+               Serial.println(a->rate);
+               bodyCtrl->setTargets(a->leftLegPos, a->leftFootPos, a->rightLegPos, a->rightFootPos, a->rate);
             } 
         }
 
@@ -431,15 +442,41 @@ void movementWalk(int steps)
         Action r = actionRightLeg(120, 70);
         r.leftLegPos = 120;
         r.leftFootPos = 70;
+        // r.rate = 2;
 
         Action l = actionLeftLeg(60, 110);
         l.rightLegPos = 60;
         l.rightFootPos = 110;
+        // l.rate = 2;
 
         actionManager->add(r);
         actionManager->add(l);
    }
+   actionManager->add(actionReset());
 }
+
+void movementWalkBackwards(int steps) 
+{
+    for(int i = 0; i < steps; i++)
+    {
+
+        Action r = actionRightLeg(60, 110);
+        r.rightLegPos = 60;
+        r.rightFootPos = 110;
+        // r.rate = 2;
+
+        Action l = actionLeftLeg(120, 70);
+        l.leftLegPos = 120;
+        l.leftFootPos = 70;
+        // l.rate = 2;
+
+
+        actionManager->add(r);
+        actionManager->add(l);
+   }
+   actionManager->add(actionReset());
+}
+
 
 void routineTestJoints() {
     movementTestFeet();
@@ -476,15 +513,12 @@ void setup() {
 
     BodyCtrl* bodyCtrl = new BodyCtrl();
     bodyCtrl->setJoints(leftLeg, leftFoot, rightLeg, rightFoot);
-    bodyCtrl->reset();
 
     actionManager->bodyCtrl = bodyCtrl;
-
-    movementWalk(8); 
-    // movementStepRight();
-    // movementStepLeft();
-    // movementStepRight();
-    // movementStepLeft();
+    
+    actionManager->add(actionReset());
+    movementWalk(4); 
+    movementWalkBackwards(4); 
 }
 
 
