@@ -316,6 +316,13 @@ int servoPinLegLeft = 3;
 int servoPinFootRight = 4;
 int servoPinFootLeft = 5;
 
+// ultrasonic
+int trigPin = 8;    // TRIG pin
+int echoPin = 9;    // ECHO pin
+
+float duration_us, distance_cm;
+
+
 Action actionBallerina()
 {
     Action a = Action();
@@ -361,11 +368,26 @@ Action actionHipFlexionIn()
 Action actionTipToe()
 {
     Action a = Action();
-    a.leftFootPos = 60;
+    a.leftFootPos = 120;
     a.leftLegPos = 90;
-    a.rightFootPos = 120;
+    a.rightFootPos = 60;
     a.rightLegPos = 90;
-    Serial.println("building tip toe..");
+    return a;
+}
+
+Action actionRightTipToe()
+{
+    Action a = Action();
+    a.rightFootPos = 60;
+    a.rightLegPos = 90;
+    return a;
+}
+
+Action actionLeftTipToe()
+{
+    Action a = Action();
+    a.leftFootPos = 120;
+    a.leftLegPos = 90;
     return a;
 }
 
@@ -463,12 +485,10 @@ void movementWalkBackwards(int steps)
         Action r = actionRightLeg(60, 110);
         r.rightLegPos = 60;
         r.rightFootPos = 110;
-        // r.rate = 2;
 
         Action l = actionLeftLeg(120, 70);
         l.leftLegPos = 120;
         l.leftFootPos = 70;
-        // l.rate = 2;
 
 
         actionManager->add(r);
@@ -516,12 +536,106 @@ void setup() {
 
     actionManager->bodyCtrl = bodyCtrl;
     
+    // configure the trigger pin to output mode
+    pinMode(trigPin, OUTPUT);
+    // configure the echo pin to input mode
+    pinMode(echoPin, INPUT);
+
     actionManager->add(actionReset());
-    movementWalk(4); 
-    movementWalkBackwards(4); 
+    // movementWalk(4); 
+    // movementWalkBackwards(4); 
 }
 
+float getDistance()
+{
+    // generate 10-microsecond pulse to TRIG pin
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+
+      // measure duration of pulse from ECHO pin
+    duration_us = pulseIn(echoPin, HIGH);
+
+    // calculate the distance
+    distance_cm = 0.017 * duration_us;
+
+    return distance_cm;
+}
+
+void react_close()
+{
+        long n = random(4);
+
+        Serial.println("Random number: ");
+        Serial.println(n);
+        
+        switch (n)
+        {
+        case 0:
+            actionManager->add(actionTipToe());
+            break;
+        
+        case 1:
+            actionManager->add(actionLeftTipToe());
+            break;
+        
+        case 2:
+            actionManager->add(actionRightTipToe());
+            break;
+        
+        case 3:
+            actionManager->add(actionReverseTipToe());
+            break;
+        }
+
+        actionManager->add(actionReset());
+}
+
+int DISTANCE_CLOSE = 10;
+int DISTANCE_MED = 20;
+int DISTANCE_FAR = 30;
+
+bool is_close = false;
+bool is_medium = false;
+bool is_far = false;
 
 void loop() {
+
+    float d = getDistance();
+    
+    if(d < DISTANCE_CLOSE)
+    {
+        if(!is_close)
+        {
+            react_close();
+        }
+
+        is_close = true;
+        is_far = false;
+        is_medium = false;
+    }
+
+    if(d > DISTANCE_CLOSE)
+    {
+        is_close = false;
+        is_medium = false;
+        is_far = false;
+    }
+
+    // if(d > DISTANCE_CLOSE && d < DISTANCE_FAR)
+    // {
+    //     is_close = false;
+    //     is_medium = true;
+    //     is_far = false;
+    // }
+
+    // if(d > DISTANCE_FAR)
+    // {
+    //     // Serial.println("far...");
+    //     is_close = false;
+    //     is_medium = false;
+    //     is_far = true;
+    // }
+
     actionManager->next();   
 }
