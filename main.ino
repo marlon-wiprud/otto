@@ -237,6 +237,7 @@ class ActionManager {
     Action* queue[5];
     int top = -1;
     BodyCtrl* bodyCtrl; 
+    boolean done;
 
     ActionLink* head;
     ActionLink* tail;
@@ -246,12 +247,13 @@ class ActionManager {
         head = nullptr;
         tail = nullptr;
         bodyCtrl = nullptr;
+        done = false;
     }
     
     void next()
     {
-        boolean done = bodyCtrl->hasReachedTarget();
-        if(done)
+        boolean reachedTargets = bodyCtrl->hasReachedTarget();
+        if(reachedTargets)
         {   
             Action* a = pop();
             if(a != nullptr)
@@ -262,8 +264,11 @@ class ActionManager {
                Serial.println(a->rightLegPos);
                Serial.println(a->rightFootPos);
                Serial.println(a->rate);
+               done = false;
                bodyCtrl->setTargets(a->leftLegPos, a->leftFootPos, a->rightLegPos, a->rightFootPos, a->rate);
-            } 
+            } else {
+                done = true;
+            }
         }
 
         bodyCtrl->step();
@@ -271,6 +276,7 @@ class ActionManager {
 
     void add(Action action)
     {
+        done = false;
         ActionLink* link = new ActionLink(action);
         link->current = action;
 
@@ -394,9 +400,9 @@ Action actionLeftTipToe()
 Action actionReverseTipToe()
 {
     Action a = Action();
-    a.leftFootPos = 120;
+    a.leftFootPos = 60;
     a.leftLegPos = 90;
-    a.rightFootPos = 60;
+    a.rightFootPos = 120;
     a.rightLegPos = 90;
     return a;
 }
@@ -464,12 +470,10 @@ void movementWalk(int steps)
         Action r = actionRightLeg(120, 70);
         r.leftLegPos = 120;
         r.leftFootPos = 70;
-        // r.rate = 2;
 
         Action l = actionLeftLeg(60, 110);
         l.rightLegPos = 60;
         l.rightFootPos = 110;
-        // l.rate = 2;
 
         actionManager->add(r);
         actionManager->add(l);
@@ -542,21 +546,16 @@ void setup() {
     pinMode(echoPin, INPUT);
 
     actionManager->add(actionReset());
-    // movementWalk(4); 
-    // movementWalkBackwards(4); 
 }
 
 float getDistance()
 {
-    // generate 10-microsecond pulse to TRIG pin
     digitalWrite(trigPin, HIGH);
     delayMicroseconds(10);
     digitalWrite(trigPin, LOW);
 
-      // measure duration of pulse from ECHO pin
     duration_us = pulseIn(echoPin, HIGH);
 
-    // calculate the distance
     distance_cm = 0.017 * duration_us;
 
     return distance_cm;
@@ -565,10 +564,7 @@ float getDistance()
 void react_close()
 {
         long n = random(4);
-
-        Serial.println("Random number: ");
-        Serial.println(n);
-        
+ 
         switch (n)
         {
         case 0:
@@ -615,27 +611,35 @@ void loop() {
         is_medium = false;
     }
 
-    if(d > DISTANCE_CLOSE)
-    {
+    if(d > DISTANCE_CLOSE && d < DISTANCE_FAR)
+    {   
+        if(is_close)
+        {
+            movementWalk(2);
+        }
+
         is_close = false;
-        is_medium = false;
+        is_medium = true;
         is_far = false;
     }
 
-    // if(d > DISTANCE_CLOSE && d < DISTANCE_FAR)
-    // {
-    //     is_close = false;
-    //     is_medium = true;
-    //     is_far = false;
-    // }
+    if(d > DISTANCE_FAR)
+    {
+        if(!is_far)
+        {
+            actionManager->add(actionReverseTipToe());
+            actionManager->add(actionReset());
+        }
 
-    // if(d > DISTANCE_FAR)
-    // {
-    //     // Serial.println("far...");
-    //     is_close = false;
-    //     is_medium = false;
-    //     is_far = true;
-    // }
+        is_close = false;
+        is_medium = false;
+        is_far = true;
+    }
 
-    actionManager->next();   
+    while(!actionManager->done)
+    {
+        actionManager->next();   
+    }
+    
+
 }
