@@ -1,10 +1,15 @@
 #include <Servo.h>
+#include <SoftwareSerial.h> 
+
+SoftwareSerial Blue(1, 0); // RX | TX 
 
 int LEFT_TIP_TOE_POS = 60;
 int RIGHT_TIP_TOE_POS = 120;
 
 int MAX_POS = 160;
 int MIN_POS = 20;
+int SERIAL_BAUD = 9600;
+int BLUETOOTH_BAUD = 9600;
 
 class JointCtrl {
     public:
@@ -317,10 +322,10 @@ class ActionManager {
 
 ActionManager* actionManager = new ActionManager();
 
-int servoPinLegRight = 2;
-int servoPinLegLeft = 3;
-int servoPinFootRight = 4;
-int servoPinFootLeft = 5;
+int servoPinLegRight = 3;
+int servoPinLegLeft = 4;
+int servoPinFootRight = 5;
+int servoPinFootLeft = 6;
 
 // ultrasonic
 int trigPin = 8;    // TRIG pin
@@ -512,8 +517,9 @@ void routineTestJoints() {
 }
 
 void setup() {
-    Serial.begin(9600);
-    
+    Serial.begin(SERIAL_BAUD);
+    Blue.begin(BLUETOOTH_BAUD);
+
     Servo servoLeftLeg;
     Servo servoLeftFoot;
     Servo servoRightLeg;
@@ -597,13 +603,19 @@ bool is_far = false;
 
 void loop() {
 
+    if(Blue.available()) {
+        Serial.println("AVAILABLE");
+    }else{
+        Serial.println("UNAVAILABLE -->");
+    }
+
     float d = getDistance();
     
     if(d < DISTANCE_CLOSE)
     {
         if(!is_close)
         {
-            react_close();
+            // react_close();
         }
 
         is_close = true;
@@ -615,7 +627,7 @@ void loop() {
     {   
         if(is_close)
         {
-            movementWalk(2);
+            // movementWalk(2);
         }
 
         is_close = false;
@@ -627,8 +639,8 @@ void loop() {
     {
         if(!is_far)
         {
-            actionManager->add(actionReverseTipToe());
-            actionManager->add(actionReset());
+            // actionManager->add(actionReverseTipToe());
+            // actionManager->add(actionReset());
         }
 
         is_close = false;
@@ -636,10 +648,10 @@ void loop() {
         is_far = true;
     }
 
-    while(!actionManager->done)
-    {
-        actionManager->next();   
-    }
+    // while(!actionManager->done)
+    // {
+    //     // actionManager->next();   
+    // }
     
 
 }
